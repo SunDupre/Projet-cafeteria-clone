@@ -1,0 +1,4 @@
+{
+  "baseUrl": "http://localhost",
+  "mailHogUrl": "http://localhost:8025"
+}

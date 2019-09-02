@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "cypress": "^3.4.0",
+    "cypress-mailhog": "^1.1.0"
+  }
+}

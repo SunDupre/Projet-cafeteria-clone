@@ -1,0 +1,81 @@
+version: "3"
+
+services:
+  # `webserver` service provides Apache + PHP
+  webserver:
+    # Use custom image based on php-apache official image
+    image: vberset/formdig-apache-php:7.3
+    networks:
+      - backend
+    # Expose HTTP/S ports
+    ports:
+      - "80:80"
+      - "443:443"
+    links: 
+      # Link to the `mariadb` service
+      - mariadb
+      - mailhog
+    volumes: 
+      # Served files
+      - ./www:/var/www/html
+      # PHP configuration file
+      - ./config/php/php.ini:/usr/local/etc/php/php.ini:ro
+      # Apache's virtual hosts folder
+      - ./config/vhosts:/etc/apache2/sites-enabled:ro
+    sysctls:
+      # Allow OS to bind 80 port to unprivileged (eg. non-root) users
+      - net.ipv4.ip_unprivileged_port_start=0
+    # Run the services as the same user as the host's one, or as user with uid 1000
+    user: "${UID:-1000}:${UID:-1000}"
+
+  # `mariadb` service provides MariaDB server
+  mariadb:
+    # Use official MariaDB image
+    image: mariadb:10.4
+    networks:
+      - backend
+    ports:
+      # Expose default port for host's tools connection
+      - "3306:3306"
+    volumes:
+      # The database's data are stored in an named volume
+      - mariadb-data:/var/lib/mysql
+    environment:
+      # Define the mariadb root user's password
+      MYSQL_ROOT_PASSWORD: digital2019
+
+  # `phpmariadb` service provides phpMyAdmin interface
+  phpmyadmin:
+    # Based on official phpMyAdmin image
+    image: phpmyadmin/phpmyadmin:4.9
+    networks:
+      - backend
+    links:
+      # Link to the `mariadb` service
+      - mariadb
+    environment:
+      # Define the database's hostname (inside the docker-compose private network)
+      PMA_HOST: mariadb
+      # Define the database's port
+      PMA_PORT: 3306
+    ports:
+      # Expose phpMyAdmin on the 9000 port of the host
+      - '9000:80'
+
+  # `mailhog` service provide SMTP testing tools
+  mailhog:
+    # Use official Mailhog image
+    image: mailhog/mailhog
+    networks:
+      - backend
+    ports:
+      # SMTP port
+      - "1025:1025"
+      # Web interface
+      - "8025:8025"
+
+networks:
+  backend:
+
+volumes:
+  mariadb-data:
